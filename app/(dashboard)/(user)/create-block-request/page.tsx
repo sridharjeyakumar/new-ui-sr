@@ -261,9 +261,9 @@ function ReviewBlockRequestModal({
                 {formData.nonCorridorReason}
               </div>
             )}
-            {formData.remarks && (
+            {formData.requestremarks && (
               <div className="mb-2">
-                <b>Remarks:</b> {formData.remarks}
+                <b>Remarks:</b> {formData.requestremarks}
               </div>
             )}
             <div className="mt-4 mb-2 p-3 rounded-xl border-2 border-[#f7d6f7] bg-[#f7d6f7]">
@@ -1107,40 +1107,39 @@ export default function CreateBlockRequestPage() {
 
     try {
       // ─── 2. Fetch existing requests and run block check ──────────────────
-      const existing = await userRequestService.getUserRequests(1, 100);
-      const requests: any[] = Array.isArray(existing?.data.requests)
-        ? existing.data.requests
-        : [];
-      const now = Date.now();
+      // const existing = await userRequestService.getUserRequests(1, 100);
+      // const requests: any[] = Array.isArray(existing?.data.requests)
+      //   ? existing.data.requests
+      //   : [];
+      // const now = Date.now();
 
-      let hasUnavailedSanctionedBlock = false;
+      // let hasUnavailedSanctionedBlock = false;
 
-      for (let i = 0; i < requests.length; i++) {
-        const req = requests[i];
-        if (
-          req?.isSanctioned === true && // sanctioned
-          req?.availedResponse === null && // not availed
-          req?.sanctionedTimeFrom // has date
-        ) {
-          const sanctionMs = new Date(req.sanctionedTimeFrom).getTime();
-          if (!Number.isNaN(sanctionMs) && now >= sanctionMs) {
-            // sanction start time is in the past (covers >24 h automatically)
-            hasUnavailedSanctionedBlock = true;
-            break;
-          }
-        }
-      }
-      console.log("level 1 passed");
+      // for (let i = 0; i < requests.length; i++) {
+      //   const req = requests[i];
+      //   if (
+      //     req?.isSanctioned === true && // sanctioned
+      //     req?.availedResponse === null && // not availed
+      //     req?.sanctionedTimeFrom // has date
+      //   ) {
+      //     const sanctionMs = new Date(req.sanctionedTimeFrom).getTime();
+      //     if (!Number.isNaN(sanctionMs) && now >= sanctionMs) {
+      //       // sanction start time is in the past (covers >24 h automatically)
+      //       hasUnavailedSanctionedBlock = true;
+      //       break;
+      //     }
+      //   }
+      // }
+      // console.log("level 1 passed");
 
-      if (hasUnavailedSanctionedBlock && !proceedAnyway) {
-        const link = `https://mobile-bms.plattrtechstudio.com/?cugNumber=${
-          session?.user?.phone
-        }&section=${formData.missionBlock || "MAS-GDR"}`;
-        setPopupLink(link);
-        setShowPopup(true);
-        setFormSubmitting(false);
-        return;
-      }
+      // if (hasUnavailedSanctionedBlock && !proceedAnyway) {
+      //   const link = `https://mobile-bms.plattrtechstudio.com/?cugNumber=${
+      //     session?.user?.phone}`;
+      //   setPopupLink(link);
+      //   setShowPopup(true);
+      //   setFormSubmitting(false);
+      //   return;
+      // }
 
       console.log("level 2 passed");
       // ─── 3. Client‑side validation ───────────────────────────────────────
@@ -1235,7 +1234,9 @@ export default function CreateBlockRequestPage() {
         ),
         processedLineSections: processedSections,
         adminAcceptance: false,
-        selectedDepo: formData.sntDisconnectionAssignTo || "", // Change as session?.user.depot
+        // selectedDepo: formData.sntDisconnectionAssignTo || "", 
+        selectedDepo: userDepot || "", 
+
       };
 
       // ─── 7. Submit to backend ────────────────────────────────────────────
@@ -1276,6 +1277,22 @@ export default function CreateBlockRequestPage() {
       setFormSubmitting(false);
     }
   };
+
+  function isToday(dateString: string) {
+  if (!dateString) return false;
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const selectedDate = new Date(dateString);
+  selectedDate.setHours(0, 0, 0, 0);
+
+  return (
+    selectedDate.getDate() === today.getDate() &&
+    selectedDate.getMonth() === today.getMonth() &&
+    selectedDate.getFullYear() === today.getFullYear()
+  );
+}
 
   // Refactor handleSubmit to work with reviewMode
   //   const handleFormSubmit = async (e: React.FormEvent) => {
@@ -2232,7 +2249,7 @@ export default function CreateBlockRequestPage() {
         <div className="w-full max-w-2xl mx-auto mt-4">
           <div className=" text-center bg-[#f7f7a1] rounded-t-2xl p-4 border-b-2 border-[#b6f7e6]">
             <div className="font-extrabold text-[9vw] min-[430px]:text-4xl   text-[#b07be0]">
-              RBMS-MAS-DIVN
+           RBMS-{session?.user?.location}-DIVN
             </div>
           </div>
           <div className="bg-[#fffaf0] rounded-b-2xl p-4 sm:p-6 w-full max-w-2xl overflow-auto">
@@ -2315,7 +2332,10 @@ export default function CreateBlockRequestPage() {
               <button
                 className="w-full rounded-2xl bg-[#e6e6fa] text-black font-bold text-[24px] py-4 tracking-wider border border-[#b7b7d1] hover:bg-[#f0eaff] transition"
                 onClick={() => {
-                  setFormData(initialFormData);
+                  setFormData({
+      ...initialFormData,
+      selectedDepartment: session?.user?.department || ""
+    });
                   setBlockSectionValue([]);
                   setProcessedLineSections([]);
                   setSelectedActivities([]);
@@ -2397,7 +2417,7 @@ export default function CreateBlockRequestPage() {
             fontFamily: "Arial Black, Arial, sans-serif",
           }}
         >
-          RBMS-MAS-DIVN
+            RBMS-{session?.user?.location}-DIVN
         </span>
       </div>
       {/* Sub-header */}
@@ -2868,160 +2888,181 @@ export default function CreateBlockRequestPage() {
             <div className="w-full mt-1 mb-4 p-6 rounded-2xl border-4 border-[#b6e6c6] bg-gradient-to-br from-[#f7f7a1] to-[#f0f0c0] flex flex-col gap-4 shadow-xl min-w-0 hover:shadow-2xl transition-shadow duration-300">
               {/* Preferred Slot label */}
               {/* Time selectors and duration row - always single line, scrollable if needed */}
-              <div className="flex flex-col flex-nowrap items-center w-full overflow-x-auto py-4 space-y-4 border-2 border-[#b7cbe8] rounded-2xl bg-gradient-to-b from-[#fffbe9] to-[#fff7d6]">
-                <span
-                  className="text-black font-bold text-[24px] mb-1 tracking-wide"
-                  style={{ lineHeight: "1", marginLeft: "4px" }}
-                >
-                  Preferred Slot
-                </span>
-                <div className="flex flex-row flex-wrap items-center justify-center gap-2 px-3 py-2 text-2xl">
-                  <div className="bg-white border-2 border-[#2c3e50] text-[#2c3e50] font-bold text-2xl px-2 py-1 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3498db]  shadow-inner hover:bg-[#f8f9fa] transition-colors duration-200">
-                    <select
-                      name="demandTimeFromHour"
-                      value={
-                        formData.demandTimeFrom
-                          ? formData.demandTimeFrom.split(":")[0]
-                          : ""
-                      }
-                      onChange={(e) => {
-                        const hour = e.target.value;
-                        const min = formData.demandTimeFrom
-                          ? formData.demandTimeFrom.split(":")[1]
-                          : "00";
-                        handleInputChange({
-                          target: {
-                            name: "demandTimeFrom",
-                            value: `${hour}:${min}`,
-                          },
-                        } as any);
-                      }}
-                      className="appearance-none text-center"
-                      required
-                    >
-                      <option value="">--</option>
-                      {[...Array(24).keys()].map((h) => (
-                        <option key={h} value={h.toString().padStart(2, "0")}>
-                          {h.toString().padStart(2, "0")}
-                        </option>
-                      ))}
-                    </select>
-                    <span className="text-[#2c3e50] font-bold text-[24px]">
-                      :
-                    </span>
-                    <select
-                      name="demandTimeFromMin"
-                      value={
-                        formData.demandTimeFrom
-                          ? formData.demandTimeFrom.split(":")[1]
-                          : ""
-                      }
-                      onChange={(e) => {
-                        const min = e.target.value;
-                        const hour = formData.demandTimeFrom
-                          ? formData.demandTimeFrom.split(":")[0]
-                          : "00";
-                        handleInputChange({
-                          target: {
-                            name: "demandTimeFrom",
-                            value: `${hour}:${min}`,
-                          },
-                        } as any);
-                      }}
-                      className="appearance-none text-center"
-                      required
-                    >
-                      <option value="">--</option>
-                      {[...Array(12).keys()].map((m) => (
-                        <option
-                          key={m}
-                          value={(m * 5).toString().padStart(2, "0")}
-                        >
-                          {(m * 5).toString().padStart(2, "0")}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <span className="text-[#2c3e50] font-bold text-[24px] px-2">
-                    TO
-                  </span>
-                  <div className="bg-white border-2 border-[#2c3e50] text-[#2c3e50] font-bold text-2xl px-2 py-1 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3498db]  text-center shadow-inner hover:bg-[#f8f9fa] transition-colors duration-200">
-                    <select
-                      name="demandTimeToHour"
-                      value={
-                        formData.demandTimeTo
-                          ? formData.demandTimeTo.split(":")[0]
-                          : ""
-                      }
-                      onChange={(e) => {
-                        const hour = e.target.value;
-                        const min = formData.demandTimeTo
-                          ? formData.demandTimeTo.split(":")[1]
-                          : "00";
-                        handleInputChange({
-                          target: {
-                            name: "demandTimeTo",
-                            value: `${hour}:${min}`,
-                          },
-                        } as any);
-                      }}
-                      className="appearance-none text-center"
-                      required
-                    >
-                      <option value="">--</option>
-                      {[...Array(24).keys()].map((h) => (
-                        <option key={h} value={h.toString().padStart(2, "0")}>
-                          {h.toString().padStart(2, "0")}
-                        </option>
-                      ))}
-                    </select>
-                    <span className="text-[#2c3e50] font-bold text-[24px]">
-                      :
-                    </span>
-                    <select
-                      name="demandTimeToMin"
-                      value={
-                        formData.demandTimeTo
-                          ? formData.demandTimeTo.split(":")[1]
-                          : ""
-                      }
-                      onChange={(e) => {
-                        const min = e.target.value;
-                        const hour = formData.demandTimeTo
-                          ? formData.demandTimeTo.split(":")[0]
-                          : "00";
-                        handleInputChange({
-                          target: {
-                            name: "demandTimeTo",
-                            value: `${hour}:${min}`,
-                          },
-                        } as any);
-                      }}
-                      className="appearance-none text-center"
-                      required
-                    >
-                      <option value="">--</option>
-                      {[...Array(12).keys()].map((m) => (
-                        <option
-                          key={m}
-                          value={(m * 5).toString().padStart(2, "0")}
-                        >
-                          {(m * 5).toString().padStart(2, "0")}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <span className="text-[#2c3e50] font-bold text-[24px] mb-1 tracking-wide">
-                  Duration
-                </span>
-                <span className="bg-white border-2 border-[#2c3e50] rounded-lg px-6 py-2 text-2xl font-bold text-[#2c3e50] min-w-[120px] text-center shadow-md hover:shadow-lg transition-shadow duration-200">
-                  {getDurationFromTimes(
-                    formData.demandTimeFrom || "",
-                    formData.demandTimeTo || ""
-                  ) || "--"}
-                </span>
-              </div>
+            <div className="flex flex-col flex-nowrap items-center w-full overflow-x-auto py-4 space-y-4 border-2 border-[#b7cbe8] rounded-2xl bg-gradient-to-b from-[#fffbe9] to-[#fff7d6]">
+  <span
+    className="text-black font-bold text-[24px] mb-1 tracking-wide"
+    style={{ lineHeight: "1", marginLeft: "4px" }}
+  >
+    Preferred Slot
+  </span>
+  <div className="flex flex-row flex-wrap items-center justify-center gap-2 px-3 py-2 text-2xl">
+    <div className="bg-white border-2 border-[#2c3e50] text-[#2c3e50] font-bold text-2xl px-2 py-1 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3498db]  shadow-inner hover:bg-[#f8f9fa] transition-colors duration-200">
+      <select
+        name="demandTimeFromHour"
+        value={
+          formData.demandTimeFrom
+            ? formData.demandTimeFrom.split(":")[0]
+            : ""
+        }
+        onChange={(e) => {
+          const hour = e.target.value;
+          const min = formData.demandTimeFrom
+            ? formData.demandTimeFrom.split(":")[1]
+            : "00";
+          handleInputChange({
+            target: {
+              name: "demandTimeFrom",
+              value: `${hour}:${min}`,
+            },
+          } as any);
+        }}
+        className="appearance-none text-center"
+        required
+      >
+        <option value="">--</option>
+        {[...Array(24).keys()].map((h) => {
+          const hourStr = h.toString().padStart(2, "0");
+          // If selected date is today, disable past hours
+          if (isToday(formData.date)) {
+            const now = new Date();
+            const currentHour = now.getHours();
+            // Only allow hours that are at least current hour + 1
+            if (h < currentHour + 1) {
+              return null; // Skip rendering this option
+            }
+          }
+          return (
+            <option key={h} value={hourStr}>
+              {hourStr}
+            </option>
+          );
+        })}
+      </select>
+      <span className="text-[#2c3e50] font-bold text-[24px]">:</span>
+      <select
+        name="demandTimeFromMin"
+        value={
+          formData.demandTimeFrom
+            ? formData.demandTimeFrom.split(":")[1]
+            : ""
+        }
+        onChange={(e) => {
+          const min = e.target.value;
+          const hour = formData.demandTimeFrom
+            ? formData.demandTimeFrom.split(":")[0]
+            : "00";
+          handleInputChange({
+            target: {
+              name: "demandTimeFrom",
+              value: `${hour}:${min}`,
+            },
+          } as any);
+        }}
+        className="appearance-none text-center"
+        required
+      >
+        <option value="">--</option>
+        {[...Array(12).keys()].map((m) => (
+          <option
+            key={m}
+            value={(m * 5).toString().padStart(2, "0")}
+          >
+            {(m * 5).toString().padStart(2, "0")}
+          </option>
+        ))}
+      </select>
+    </div>
+    <span className="text-[#2c3e50] font-bold text-[24px] px-2">
+      TO
+    </span>
+    <div className="bg-white border-2 border-[#2c3e50] text-[#2c3e50] font-bold text-2xl px-2 py-1 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3498db]  text-center shadow-inner hover:bg-[#f8f9fa] transition-colors duration-200">
+      <select
+        name="demandTimeToHour"
+        value={
+          formData.demandTimeTo
+            ? formData.demandTimeTo.split(":")[0]
+            : ""
+        }
+        onChange={(e) => {
+          const hour = e.target.value;
+          const min = formData.demandTimeTo
+            ? formData.demandTimeTo.split(":")[1]
+            : "00";
+          handleInputChange({
+            target: {
+              name: "demandTimeTo",
+              value: `${hour}:${min}`,
+            },
+          } as any);
+        }}
+        className="appearance-none text-center"
+        required
+      >
+        <option value="">--</option>
+        {[...Array(24).keys()].map((h) => {
+          const hourStr = h.toString().padStart(2, "0");
+          // If selected date is today, ensure "To" time is after "From" time
+          if (isToday(formData.date)) {
+            const fromHour = formData.demandTimeFrom 
+              ? parseInt(formData.demandTimeFrom.split(":")[0])
+              : new Date().getHours() + 1;
+            // Only allow hours that are after the from time
+            if (h <= fromHour) {
+              return null; // Skip rendering this option
+            }
+          }
+          return (
+            <option key={h} value={hourStr}>
+              {hourStr}
+            </option>
+          );
+        })}
+      </select>
+      <span className="text-[#2c3e50] font-bold text-[24px]">:</span>
+      <select
+        name="demandTimeToMin"
+        value={
+          formData.demandTimeTo
+            ? formData.demandTimeTo.split(":")[1]
+            : ""
+        }
+        onChange={(e) => {
+          const min = e.target.value;
+          const hour = formData.demandTimeTo
+            ? formData.demandTimeTo.split(":")[0]
+            : "00";
+          handleInputChange({
+            target: {
+              name: "demandTimeTo",
+              value: `${hour}:${min}`,
+            },
+          } as any);
+        }}
+        className="appearance-none text-center"
+        required
+      >
+        <option value="">--</option>
+        {[...Array(12).keys()].map((m) => (
+          <option
+            key={m}
+            value={(m * 5).toString().padStart(2, "0")}
+          >
+            {(m * 5).toString().padStart(2, "0")}
+          </option>
+        ))}
+      </select>
+    </div>
+  </div>
+  <span className="text-[#2c3e50] font-bold text-[24px] mb-1 tracking-wide">
+    Duration
+  </span>
+  <span className="bg-white border-2 border-[#2c3e50] rounded-lg px-6 py-2 text-2xl font-bold text-[#2c3e50] min-w-[120px] text-center shadow-md hover:shadow-lg transition-shadow duration-200">
+    {getDurationFromTimes(
+      formData.demandTimeFrom || "",
+      formData.demandTimeTo || ""
+    ) || "--"}
+  </span>
+</div>
               {/* Site Location row */}
               <div className="flex flex-row items-center gap-4 w-full pl-1">
                 <div className="flex flex-col items-center bg-gradient-to-b from-[#fffbe9] to-[#fff7d6] border-2 border-[#b7cbe8] rounded-xl px-4 py-5 space-y-4 w-full shadow-md hover:shadow-lg transition-shadow duration-200">
@@ -3249,8 +3290,7 @@ export default function CreateBlockRequestPage() {
               )}
             </div>
           </div>
-
-          {userDepartment === "TRD" && (
+            {/*Coaching Repercussions*/}
             <div className="w-full flex flex-row  items-center bg-[#e6f7c6] rounded-2xl p-3 mb-8 border-2 border-[#b6e6c6] shadow">
               {/* Type of Work dropdown */}
               <div className="flex-1 pr-2 ">
@@ -3278,7 +3318,6 @@ export default function CreateBlockRequestPage() {
               </div>
               {/* Activity dropdown */}
             </div>
-          )}
 
 
           {userDepartment !== "TRD" && (
@@ -3872,8 +3911,8 @@ export default function CreateBlockRequestPage() {
           <div className="flex flex-row flex-wrap gap-1">
             <span className="text-black font-bold text-[24px]">Remarks:</span>
             <textarea
-              name="remarks"
-              value={formData.remarks || ""}
+              name="requestremarks"
+              value={formData.requestremarks || ""}
               onChange={handleInputChange}
               placeholder="Enter any additional remarks"
               rows={1}
@@ -3903,7 +3942,7 @@ export default function CreateBlockRequestPage() {
             >
               Back
             </button>
-            {showPopup && (
+            {/* {showPopup && (
               <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-white/20">
                 <div className="bg-white p-4 rounded shadow-lg w-[90%] max-w-sm text-center border border-gray-300">
                   <h2 className="text-lg font-semibold mb-2 text-black">
@@ -3940,7 +3979,7 @@ export default function CreateBlockRequestPage() {
                   </div>
                 </div>
               </div>
-            )}
+            )} */}
 
             {showReviewModal && (
               <ReviewBlockRequestModal

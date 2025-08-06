@@ -38,9 +38,17 @@ export const useAuth = () => {
       const user = await handleAuthSuccess(data);
       
       // Handle redirection based on user role
-      if (user.role === "BRANCH_OFFICER" && user.email === "b@mail.com") {
+      if (user.role === "DEPT_CONTROLLER") {
         router.push("/manage/request-table");
-      } else if (user.role === "ADMIN") {
+      } 
+      
+      else if(user.role==="SM"){
+    // window.location.href = `https://smr-dashboard.plattorian.tech/?cugNumber=${user.phone ?? ""}&section=MAS-GDR`;
+ window.location.href=`https://smr-dashboard.plattorian.tech/?cugNumber=${user?.phone}&stationCode=${user?.depot}&user=SM&token=W1IU66ZFEBFBF6C1dGmouN6PVyHARQJg`
+ 
+  }
+      
+      else if (user.role === "ADMIN") {
         router.push("/admin/request-table");
       } else {
         router.push("/dashboard");

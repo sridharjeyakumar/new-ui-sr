@@ -58,7 +58,7 @@ const hasInProgressBlock = requestsData?.data?.requests?.find(
         {/* RBMS badge */}
         <div className="w-full flex justify-center mt-4">
           <div className="bg-[#8ed974] px-8 py-2">
-            <span className="text-[9vw] min-[430px]:text-4xl text-nowrap font-extrabold text-[#b07be0] tracking-wide">RBMS-MAS-DIVN</span>
+            <span className="text-[9vw] min-[430px]:text-4xl text-nowrap font-extrabold text-[#b07be0] tracking-wide">RBMS-{session?.user?.location}-DIVN</span>
           </div>
         </div>
         {/* Designation bar */}
@@ -72,7 +72,7 @@ const hasInProgressBlock = requestsData?.data?.requests?.find(
           <a href="/create-block-request" className="w-full rounded-full bg-[#eeb8f7] border border-black py-6 text-xl font-extrabold text-black text-center shadow hover:scale-105 transition">ENTER NEW BLOCK REQUEST</a>
           <a href="/edit-request" className="w-full rounded-full bg-[#aee6f7] border border-black py-6 text-xl font-extrabold text-black text-center shadow hover:scale-105 transition">EDIT/CANCEL PREVIOUS BLOCK REQUESTS</a>
           <a href="/request-table" className="w-full rounded-full bg-[#c7c7f7] border border-black py-6 text-xl font-extrabold text-black text-center shadow hover:scale-105 transition">SUMMARY OF MY BLOCK REQUESTS</a>
-          <a href={`https://mobile-bms.plattrtechstudio.com/?cugNumber=${session?.user?.phone}&section=MAS-GDR`} className="w-full rounded-full bg-[#a6f7a6] border border-black py-6 text-xl font-extrabold text-black text-center shadow hover:scale-105 transition">AVAIL BLOCK AT SITE</a>
+          <a href={`rbms://app?cugNumber=${session?.user?.phone}`} className="w-full rounded-full bg-[#a6f7a6] border border-black py-6 text-xl font-extrabold text-black text-center shadow hover:scale-105 transition">AVAIL BLOCK AT SITE</a>
 
 {hasInProgressBlock && (
   <a
@@ -116,7 +116,7 @@ const hasInProgressBlock = requestsData?.data?.requests?.find(
         {/* RBMS badge */}
         <div className="w-full flex justify-center mt-4">
           <div className="bg-green-200 rounded-2xl px-8 py-2">
-            <span className="text-4xl font-extrabold text-[#b07be0] tracking-wide">RBMS</span>
+            <span className="text-4xl font-extrabold text-[#b07be0] tracking-wide">RBMS-{session?.user?.location}-DIVN</span>
           </div>
         </div>
         {/* Designation bar */}
@@ -183,9 +183,17 @@ const hasInProgressBlock = requestsData?.data?.requests?.find(
   //     </div>
   //   );
   // }
-if (session?.user?.role === "BRANCH_OFFICER" && session?.user.email === "b@mail.com") {
+if (session?.user?.role === "DEPT_CONTROLLER") {
 
     window.location.href = "/manage/request-table";
+ 
+}
+
+if (session?.user?.role === "SM") {
+
+    // window.location.href = "https://smr-dashboard.plattorian.tech/?cugNumber=${session?.user?.phone}&section=MAS-GDR";
+      window.location.href=`https://smr-dashboard.plattorian.tech/?cugNumber=${session?.user?.phone}&stationCode=${session?.user?.depot}&user=SM&token=W1IU66ZFEBFBF6C1dGmouN6PVyHARQJg`
+
  
 }
   // Custom admin dashboard UI (match manager dashboard style)
@@ -202,7 +210,7 @@ if (session?.user?.role === "BRANCH_OFFICER" && session?.user.email === "b@mail.
         {/* RBMS badge */}
         <div className="w-full flex justify-center mt-4">
           <div className="bg-green-200 rounded-2xl px-8 py-2">
-            <span className="text-4xl font-extrabold text-[#b07be0] tracking-wide">RBMS</span>
+            <span className="text-4xl font-extrabold text-[#b07be0] tracking-wide">RBMS-{session?.user?.location}-DIVN</span>
           </div>
         </div>
         {/* Designation bar */}
@@ -255,7 +263,7 @@ if (session?.user?.role === "BRANCH_OFFICER" && session?.user.email === "b@mail.
         {/* RBMS badge */}
         <div className="w-full flex justify-center mt-4">
           <div className="bg-green-200 rounded-2xl px-8 py-2">
-            <span className="text-4xl font-extrabold text-[#b07be0] tracking-wide">RBMS</span>
+            <span className="text-4xl font-extrabold text-[#b07be0] tracking-wide">RBMS-{session?.user?.location}-DIVN</span>
           </div>
         </div>
         {/* Designation bar */}
@@ -266,10 +274,10 @@ if (session?.user?.role === "BRANCH_OFFICER" && session?.user.email === "b@mail.
         </div>
         {/* Navigation buttons */}
         <div className="flex flex-col gap-8 mt-8 w-full max-w-md items-center">
-          <a href={`https://mobile-bms.plattrtechstudio.com/?cugNumber=${session?.user?.phone}&section=MAS-GDR`}>
+          <a href={`rbms://app?cugNumber=${session?.user?.phone}`}>
 
             <button className="w-72 bg-[#E6E6FA] py-6 rounded-2xl border-4 border-black text-2xl font-bold text-[#13529e] shadow-lg hover:bg-[#B57CF6] hover:text-white transition-colors">
-              VIEW BLOCK DETAILS
+              AVAIL BLOCK AT SITE
             </button>
           </a>
         </div>
@@ -307,7 +315,7 @@ if (session?.user?.role === "BRANCH_OFFICER" && session?.user.email === "b@mail.
         <div className="w-full flex justify-center mt-4">
           <div className="bg-green-200 rounded-2xl px-8 py-2">
             <span className="text-4xl font-extrabold text-[#b07be0] tracking-wide">
-              RBMS
+              RBMS-{session?.user?.location}-DIVN
             </span>
           </div>
         </div>
@@ -361,7 +369,7 @@ if (session?.user?.role === "BRANCH_OFFICER" && session?.user.email === "b@mail.
         <div className="w-full flex justify-center mt-4">
           <div className="bg-green-200 rounded-2xl px-8 py-2">
             <span className="text-4xl font-extrabold text-[#b07be0] tracking-wide">
-              RBMS
+              RBMS-{session?.user?.location}-DIVN
             </span>
           </div>
         </div>

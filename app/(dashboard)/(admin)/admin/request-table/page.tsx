@@ -111,6 +111,7 @@ export default function AdminRequestTablePage() {
     )
   );
   const blockTypeOptions = [
+    { label: "All", value: "ALL" },
     { label: "Corridor (C)", value: "Corridor" },
     { label: "Non-corridor(NC)", value: "Outside Corridor" },
     { label: "Emergency (E)", value: "Urgent Block" },
@@ -181,43 +182,92 @@ export default function AdminRequestTablePage() {
   const allRequests = data?.data?.requests || [];
   // console.log(allRequests);
 
+// const TotalRequests = allRequests.filter((r: UserRequest) => {
+//     if (r.isSanctioned) return false;
+//     if (!r.date) return false;
+//     if (pendingDept ) return false;
+//     const reqDate = new Date(r.date);
+//     reqDate.setHours(0, 0, 0, 0);
+//     return reqDate > today;
+//   }).length;
+
+//   const ENGGRequest = allRequests.filter((r: UserRequest) => {
+//     if ( r.isSanctioned) return false;
+//     if (!r.date) return false;
+//     if ( r.selectedDepartment !== "ENGG") return false;
+//     const reqDate = new Date(r.date);
+//     reqDate.setHours(0, 0, 0, 0);
+//     return reqDate > today;
+//   }).length;
+
+
+//   const SandTRequest = allRequests.filter((r: UserRequest) => {
+//     if (r.isSanctioned) return false;
+//     if (!r.date) return false;
+//     if ( r.selectedDepartment !== "S&T") return false;
+//     const reqDate = new Date(r.date);
+//     reqDate.setHours(0, 0, 0, 0);
+//     return reqDate > today;
+//   }).length;
+
+//   const TRDRequest = allRequests.filter((r: UserRequest) => {
+//     if (r.isSanctioned) return false;
+//     if (!r.date) return false;
+//     if ( r.selectedDepartment !== "TRD") return false;
+//     const reqDate = new Date(r.date);
+//     reqDate.setHours(0, 0, 0, 0);
+//     return reqDate > today;
+//   }).length;
 const TotalRequests = allRequests.filter((r: UserRequest) => {
-    if (r.status !== "APPROVED" || r.isSanctioned) return false;
-    if (!r.date) return false;
-    if (pendingDept ) return false;
-    const reqDate = new Date(r.date);
-    reqDate.setHours(0, 0, 0, 0);
-    return reqDate > today;
-  }).length;
+   if (!r.date) return false;
 
-  const ENGGRequest = allRequests.filter((r: UserRequest) => {
-    if (r.status !== "APPROVED" || r.isSanctioned) return false;
-    if (!r.date) return false;
-    if ( r.selectedDepartment !== "ENGG") return false;
-    const reqDate = new Date(r.date);
-    reqDate.setHours(0, 0, 0, 0);
-    return reqDate > today;
-  }).length;
+  const reqDate = new Date(r.date);
+  reqDate.setHours(0, 0, 0, 0);
+  return (
+    !r.isSanctioned &&
+    (r.overAllStatus === "with optg.")&&
+    reqDate > today
+  );
+}).length;
 
+const ENGGRequest = allRequests.filter((r: UserRequest) => {
+   if (!r.date) return false;
 
-  const SandTRequest = allRequests.filter((r: UserRequest) => {
-    if (r.status !== "APPROVED" || r.isSanctioned) return false;
-    if (!r.date) return false;
-    if ( r.selectedDepartment !== "S&T") return false;
-    const reqDate = new Date(r.date);
-    reqDate.setHours(0, 0, 0, 0);
-    return reqDate > today;
-  }).length;
+  const reqDate = new Date(r.date);
+  reqDate.setHours(0, 0, 0, 0);
+  return (
+    !r.isSanctioned &&
+    r.selectedDepartment === "ENGG" &&
+    (r.overAllStatus === "with optg.")&&
+    reqDate > today
+  );
+}).length;
 
-  const TRDRequest = allRequests.filter((r: UserRequest) => {
-    if (r.status !== "APPROVED" || r.isSanctioned) return false;
-    if (!r.date) return false;
-    if ( r.selectedDepartment !== "TRD") return false;
-    const reqDate = new Date(r.date);
-    reqDate.setHours(0, 0, 0, 0);
-    return reqDate > today;
-  }).length;
+const SandTRequest = allRequests.filter((r: UserRequest) => {
+   if (!r.date) return false;
 
+  const reqDate = new Date(r.date);
+  reqDate.setHours(0, 0, 0, 0);
+  return (
+    !r.isSanctioned &&
+    r.selectedDepartment === "S&T" &&
+    (r.overAllStatus === "with optg.")&&
+    reqDate > today
+  );
+}).length;
+
+const TRDRequest = allRequests.filter((r: UserRequest) => {
+   if (!r.date) return false;
+
+  const reqDate = new Date(r.date);
+  reqDate.setHours(0, 0, 0, 0);
+  return (
+    !r.isSanctioned &&
+    r.selectedDepartment === "TRD" &&
+    (r.overAllStatus === "with optg.") &&
+    reqDate > today
+  );
+}).length;
   // const handleDownloadCSV = () => {
   //   try {
   //     if (!filteredRequests || filteredRequests.length === 0) {
@@ -319,9 +369,12 @@ const TotalRequests = allRequests.filter((r: UserRequest) => {
         "Line/Road",
         "Activity",
         "Status",
-        "Start Time (HH:MM)",
-        "End Time (HH:MM)",
+        "Demanded From Time (HH:MM)",
+        "Demanded To Time (HH:MM)",
+        "Sanctioned From Time (HH:MM)", 
+        "Sanctioned To Time (HH:MM)",   
         "Corridor Type",
+        "Department", 
         "SSE Name",
         "Work Location",
         "Remarks",
@@ -336,6 +389,17 @@ const TotalRequests = allRequests.filter((r: UserRequest) => {
         const endTime = request.demandTimeTo
           ? new Date(request.demandTimeTo).toISOString().slice(11, 16)
           : "N/A";
+const sanctionedFrom = request.sanctionedTimeFrom
+  ? new Date(request.sanctionedTimeFrom).toISOString().slice(11, 16)
+  : request.optimizeTimeFrom
+    ? new Date(request.optimizeTimeFrom).toISOString().slice(11, 16)
+    : "N/A";
+
+const sanctionedTo = request.sanctionedTimeTo
+  ? new Date(request.sanctionedTimeTo).toISOString().slice(11, 16)
+  : request.optimizeTimeTo
+    ? new Date(request.optimizeTimeTo).toISOString().slice(11, 16)
+    : "N/A";
 
         return [
           formatDate(request.date), // DD-MM-YYYY
@@ -346,7 +410,10 @@ const TotalRequests = allRequests.filter((r: UserRequest) => {
           getStatusDisplay(request).label,
           startTime,
           endTime,
+          sanctionedFrom,
+          sanctionedTo,
           request.corridorType,
+          request.user?.department || request.selectedDepartment || "N/A",
           request.user?.name || "N/A",
           request.workLocationFrom,
           request.requestremarks,
@@ -377,14 +444,42 @@ const TotalRequests = allRequests.filter((r: UserRequest) => {
     setPendingSummaryFilters((prev) => ({ ...prev, [field]: value }));
   };
   // Block Type
-  const handlePendingBlockTypeChange = (value: string) => {
-    setPendingSummaryFilters((prev) => ({
-      ...prev,
-      blockType: prev.blockType.includes(value)
-        ? prev.blockType.filter((v) => v !== value)
-        : [...prev.blockType, value],
-    }));
-  };
+  // const handlePendingBlockTypeChange = (value: string) => {
+  //   setPendingSummaryFilters((prev) => ({
+  //     ...prev,
+  //     blockType: prev.blockType.includes(value)
+  //       ? prev.blockType.filter((v) => v !== value)
+  //       : [...prev.blockType, value],
+  //   }));
+  // };
+  
+const handlePendingBlockTypeChange = (value: string) => {
+  setPendingSummaryFilters((prev) => {
+    const allBlockTypeValues = blockTypeOptions.slice(1).map(opt => opt.value); // All values except "ALL"
+    
+    if (value === "ALL") {
+      // Toggle between selecting all and selecting none
+      const shouldSelectAll = prev.blockType.length < allBlockTypeValues.length;
+      return {
+        ...prev,
+        blockType: shouldSelectAll ? [...allBlockTypeValues] : []
+      };
+    } else {
+      // Normal selection logic for individual types
+      let newBlockTypes;
+      if (prev.blockType.includes(value)) {
+        newBlockTypes = prev.blockType.filter(v => v !== value);
+      } else {
+        newBlockTypes = [...prev.blockType, value];
+      }
+      
+      return {
+        ...prev,
+        blockType: newBlockTypes
+      };
+    }
+  });
+}
   // Section
   const handlePendingSectionChange = (value: string) => {
     setPendingSummaryFilters((prev) => ({
@@ -419,13 +514,26 @@ const TotalRequests = allRequests.filter((r: UserRequest) => {
     summaryFilteredRequests = summaryFilteredRequests.filter((r) => r.date <= activeSummaryFilters.end);
   }
   // Block type
-  if (activeSummaryFilters.blockType.length > 0) {
-    summaryFilteredRequests = summaryFilteredRequests.filter((r) => activeSummaryFilters.blockType.includes(r.corridorType));
+ if (activeSummaryFilters.blockType.length > 0) {
+  // Only filter if not all types are selected
+  const allTypesSelected = activeSummaryFilters.blockType.length === blockTypeOptions.length - 1;
+  if (!allTypesSelected) {
+    summaryFilteredRequests = summaryFilteredRequests.filter((r) => 
+      activeSummaryFilters.blockType.includes(r.corridorType)
+    );
   }
+}
   // Section
-  if (activeSummaryFilters.section.length > 0) {
-    summaryFilteredRequests = summaryFilteredRequests.filter((r) => activeSummaryFilters.section.includes(r.selectedSection));
+// In the filtering section, modify the section filter part:
+if (activeSummaryFilters.section.length > 0) {
+  // Only filter if not all sections are selected
+  const allSectionsSelected = activeSummaryFilters.section.length === sectionOptions.length;
+  if (!allSectionsSelected) {
+    summaryFilteredRequests = summaryFilteredRequests.filter((r) => 
+      activeSummaryFilters.section.includes(r.selectedSection)
+    );
   }
+}
   // Dept
   if (activeSummaryFilters.dept) {
     summaryFilteredRequests = summaryFilteredRequests.filter((r) => r.selectedDepartment === activeSummaryFilters.dept);
@@ -445,13 +553,13 @@ const TotalRequests = allRequests.filter((r: UserRequest) => {
   }
 
   if (error) {
-    return (
-      <div className="min-h-screen bg-white p-3 border border-black flex items-center justify-center">
-        <div className="text-center py-5 text-red-600">
-          Error loading approved requests. Please try again.
-        </div>
-      </div>
-    );
+    // return (
+    //   <div className="min-h-screen bg-white p-3 border border-black flex items-center justify-center">
+    //     <div className="text-center py-5 text-red-600">
+    //       Error loading approved requests. Please try again.
+    //     </div>
+    //   </div>
+    // );
   }
 
   return (
@@ -459,7 +567,7 @@ const TotalRequests = allRequests.filter((r: UserRequest) => {
       {/* Top Yellow Bar */}
       <div className="w-full bg-[#FFF86B] py-2 flex flex-col items-center">
         <span className="text-[24px] font-bold text-[#B57CF6] tracking-widest">
-          RBMS-MAS-DIVIN
+          RBMS-{session?.user?.location}-DIVN
         </span>
       </div>
       {/* Main Title on Light Blue */}
@@ -547,28 +655,38 @@ const TotalRequests = allRequests.filter((r: UserRequest) => {
                   Type
                   <span className="ml-1 text-sm">▼</span>
                 </button>
-                {blockTypeDropdownOpen && (
-                  <div className="absolute z-10 mt-2 w-40 bg-white border-2 border-[#00B4D8] rounded shadow-lg">
-                    {blockTypeOptions.map((opt) => (
-                      <label
-                        key={opt.value}
-                        className="flex items-center px-3 py-2 cursor-pointer hover:bg-[#D6F3FF] text-black text-[20px]"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={pendingSummaryFilters.blockType.includes(
-                            opt.value
-                          )}
-                          onChange={() =>
-                            handlePendingBlockTypeChange(opt.value)
-                          }
-                          className="mr-2 accent-[#B57CF6]"
-                        />
-                        {opt.label}
-                      </label>
-                    ))}
-                  </div>
-                )}
+              {blockTypeDropdownOpen && (
+  <div className="absolute z-10 mt-2 w-40 bg-white border-2 border-[#00B4D8] rounded shadow-lg">
+    {blockTypeOptions.map((opt) => {
+      const allBlockTypeValues = blockTypeOptions.slice(1).map(o => o.value);
+      const allSelected = allBlockTypeValues.every(val => 
+        pendingSummaryFilters.blockType.includes(val)
+      );
+      
+      return (
+        <label
+          key={opt.value}
+          className="flex items-center px-3 py-2 cursor-pointer hover:bg-[#D6F3FF] text-black text-[20px]"
+        >
+          <input
+            type="checkbox"
+            checked={
+              opt.value === "ALL" 
+                ? allSelected
+                : pendingSummaryFilters.blockType.includes(opt.value)
+            }
+          onChange={() => {
+  handlePendingBlockTypeChange(opt.value);
+  setBlockTypeDropdownOpen(false); 
+}}
+            className="mr-2 accent-[#B57CF6]"
+          />
+          {opt.label}
+        </label>
+      );
+    })}
+  </div>
+)}
               </div>
               {/* Section Dropdown (Multi-select) */}
               <div className="relative inline-block">
@@ -579,26 +697,65 @@ const TotalRequests = allRequests.filter((r: UserRequest) => {
                   Section
                   <span className="ml-1 text-sm">▼</span>
                 </button>
-                {sectionDropdownOpen && (
-                  <div className="absolute z-50 mt-2 w-40 bg-white border-2 border-[#00B4D8] rounded shadow-lg max-h-60 overflow-y-auto">
-                    {sectionOptions.map((section) => (
-                      <label
-                        key={section}
-                        className="flex items-center px-3 py-2 cursor-pointer hover:bg-[#D6F3FF] text-black text-[20px]"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={pendingSummaryFilters.section.includes(
-                            section
-                          )}
-                          onChange={() => handlePendingSectionChange(section)}
-                          className="mr-2 accent-[#B57CF6]"
-                        />
-                        {section}
-                      </label>
-                    ))}
-                  </div>
-                )}
+            {sectionDropdownOpen && (
+  <div className="absolute z-50 mt-2 w-40 bg-white border-2 border-[#00B4D8] rounded shadow-lg max-h-60 overflow-y-auto">
+    {/* Add ALL option at the top */}
+    <label className="flex items-center px-3 py-2 cursor-pointer hover:bg-[#D6F3FF] text-black text-[20px] border-b border-gray-200">
+      <input
+        type="checkbox"
+        checked={
+          pendingSummaryFilters.section.length === sectionOptions.length ||
+          (sectionOptions.length === 0 && pendingSummaryFilters.section.length > 0)
+        }
+        onChange={() => {
+          if (pendingSummaryFilters.section.length === sectionOptions.length) {
+            // If all are selected, deselect all
+            setPendingSummaryFilters(prev => ({
+              ...prev,
+              section: []
+            }));
+          } else {
+            // Select all available sections
+            setPendingSummaryFilters(prev => ({
+              ...prev,
+              section: [...sectionOptions]
+            }));
+          }
+          setSectionDropdownOpen(false);
+        }}
+        className="mr-2 accent-[#B57CF6]"
+      />
+      ALL
+    </label>
+    
+    {sectionOptions.map((section) => (
+      <label
+        key={section}
+        className="flex items-center px-3 py-2 cursor-pointer hover:bg-[#D6F3FF] text-black text-[20px]"
+      >
+        <input
+          type="checkbox"
+          checked={pendingSummaryFilters.section.includes(section)}
+          onChange={() => {
+            setPendingSummaryFilters(prev => {
+              const newSections = prev.section.includes(section)
+                ? prev.section.filter(s => s !== section)
+                : [...prev.section, section];
+              
+              return {
+                ...prev,
+                section: newSections
+              };
+            });
+            setSectionDropdownOpen(false);
+          }}
+          className="mr-2 accent-[#B57CF6]"
+        />
+        {section}
+      </label>
+    ))}
+  </div>
+)}
               </div>
               {/* Dept Dropdown */}
               <div className="relative inline-block">
@@ -651,7 +808,7 @@ const TotalRequests = allRequests.filter((r: UserRequest) => {
                       </tr>
                     </thead>
                     <tbody>
-                      {sanctionedRequests.map(
+                      {sanctionedRequests.sort((a:any, b:any) => new Date(a.sanctionedTimeFrom || a.optimizeTimeFrom).getTime() - new Date(b.sanctionedTimeTo || b.optimizeTimeTo).getTime()).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()).map(
                         (request: UserRequest, idx: number) => {
                           const status = getStatusDisplay(request);
                           return (
@@ -728,7 +885,7 @@ const TotalRequests = allRequests.filter((r: UserRequest) => {
           </span>
         </h3>
                 <button
-          onClick={() => handleDownloadExcel(summaryFilteredRequests)}
+          onClick={() => handleDownloadExcel(sanctionedRequests)}
           className="w-fit bg-[#FFA07A] hover:bg-[#FFBFAE] px-12 py-3 rounded-[50%] border-2 border-[#FF6B6B] font-bold text-[24px] text-[#5D3587] shadow transition"
         >
           Download
@@ -739,11 +896,11 @@ const TotalRequests = allRequests.filter((r: UserRequest) => {
       </div>
 
       
-      <Link href="/admin/revise-block"  className="mb-8">
+      {/* <Link href="/admin/revise-block"  className="mb-8">
             <button className="w-fit px-10 rounded-full bg-[#ffd180] border border-black py-6 text-2xl font-extrabold text-black text-center shadow hover:scale-105 transition">
               REVISE THE BLOCK FOR THE DAY
             </button>
-          </Link>
+          </Link> */}
           <Link href="/admin/sanction-table-data"  className="mb-8">
             <button className="w-fit px-10 rounded-full bg-[#c7c7f7] border border-black py-6 text-2xl font-extrabold text-black text-center shadow hover:scale-105 transition">
               BLOCK SUMMARY REPORT

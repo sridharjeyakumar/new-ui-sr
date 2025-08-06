@@ -7,6 +7,7 @@ import { format, parseISO, isAfter, isToday } from "date-fns";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import dayjs from "dayjs";
+import { useSession } from "next-auth/react";
 
 const ACTIONS = [
     { key: "continue", label: "Stop train and continue the block", color: "#1dcaff" },
@@ -26,6 +27,7 @@ export default function ReviseBlockPage() {
     const [reviseToDate, setReviseToDate] = useState('');
     const [reviseToTime, setReviseToTime] = useState('');
     const queryClient = useQueryClient();
+  const { data: session } = useSession();
 
     // Fetch block data for the selected date
     const { data, isLoading, error } = useQuery({
@@ -111,13 +113,14 @@ export default function ReviseBlockPage() {
   }
 
   if (error) {
-    return (
-      <div className="min-h-screen bg-white p-3 border border-black flex items-center justify-center">
-        <div className="text-center py-5 text-red-600">
-          Error loading approved requests. Please try again.
-        </div>
-      </div>
-    );
+    router.push('/auth/login');
+    // return (
+    //   <div className="min-h-screen bg-white p-3 border border-black flex items-center justify-center">
+    //     <div className="text-center py-5 text-red-600">
+    //       Error loading approved requests. Please try again.
+    //     </div>
+    //   </div>
+    // );
   }
 
     return (
@@ -125,7 +128,7 @@ export default function ReviseBlockPage() {
             {/* Top Yellow Bar */}
             <div className="w-full bg-[#FFF86B] py-2 flex flex-col items-center">
                 <span className="text-[24px] font-bold text-[#B57CF6] tracking-widest">
-          RBMS-MAS-DIVI
+          RBMS-{session?.user?.location}-DIVN
                 </span>
             </div>
             {/* Main Title on Light Blue */}

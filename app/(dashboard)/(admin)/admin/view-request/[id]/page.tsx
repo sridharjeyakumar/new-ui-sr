@@ -110,13 +110,14 @@ export default function ViewRequestPage() {
   }
 
   if (error) {
-    return (
-      <div className="min-h-screen bg-white p-3 border border-black flex items-center justify-center">
-        <div className="text-center py-5 text-red-600">
-          Error loading approved requests. Please try again.
-        </div>
-      </div>
-    );
+    router.push('/auth/login');
+    // return (
+    //   <div className="min-h-screen bg-white p-3 border border-black flex items-center justify-center">
+    //     <div className="text-center py-5 text-red-600">
+    //       Error loading approved requests. Please try again.
+    //     </div>
+    //   </div>
+    // );
   }
 
   const request = data?.data;
@@ -136,12 +137,18 @@ export default function ViewRequestPage() {
           Block Details
         </h1>
         <div className="flex gap-2">
-          <Link
+          {/* <Link
             href={data?.data ? getBackUrl(data.data) : '/admin/optimise-table'}
             className="px-3 py-1 text-sm bg-white text-[#13529e] border border-black"
           >
             Back
-          </Link>
+          </Link> */}
+          <button
+      onClick={() => router.back()}
+      className="px-3 py-1 text-sm bg-white text-[#13529e] border border-black"
+    >
+      Back
+    </button>
           {request.adminRequestStatus === "PENDING" && (
             <button
               onClick={() => handleRequestAction(false)}
@@ -154,7 +161,7 @@ export default function ViewRequestPage() {
         </div>
       </div>
 
-      <div className="mb-4 px-2 py-1 inline-block">
+      {/* <div className="mb-4 px-2 py-1 inline-block">
         <span
           className={`px-2 py-0.5 text-sm ${getStatusBadgeClass(
             request.sntDisconnectionRequired === undefined
@@ -171,7 +178,7 @@ export default function ViewRequestPage() {
               ? request.DisconnAcceptance || "PENDING"
               : "NAN"}
         </span>
-      </div>
+      </div> */}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div className="border border-black p-3">
@@ -241,7 +248,7 @@ export default function ViewRequestPage() {
                 <tr>
                   <td className="py-1 font-medium">Work Location:</td>
                   <td className="py-1">
-                    {request.workLocationFrom} to {request.workLocationTo}
+                    {request.workLocationFrom} 
                   </td>
                 </tr>
               ) : null}

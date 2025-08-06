@@ -340,7 +340,7 @@ const TimePeriodDisplay = ({
 export default function RequestTablePage() {
   // State for pagination and view type
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(10);
+  const [pageSize] = useState(100);
   const [dateRange, setDateRange] = useState({
     startDate: new Date(),
     endDate: addDays(new Date(), 9),
@@ -403,29 +403,87 @@ const [requestToReject, setRequestToReject] = useState<{
     }
   };
 
-  const handleStatusUpdate = (id: string, accept: boolean,userDepartement:string,mobileView:string) => {
-    if (accept) {
-      updateOtherRequest(
-        {
-          id,
-          accept,
-          userDepartement,
-          mobileView
+  // const handleStatusUpdate = (id: string, accept: boolean,userDepartement:string,mobileView:string) => {
+  //   if (accept) {
+  //     updateOtherRequest(
+  //       {
+  //         id,
+  //         accept,
+  //         userDepartement,
+  //         mobileView
+  //       },
+  //       {
+  //         onSuccess: () => {
+  //           // Refetch the data after the mutation succeeds
+  //           refetch();
+  //         },
+  //       }
+  //     );
+  //   } else {
+  //   setRequestToReject({ id, userDepartement, mobileView });
+  //   setShowRejectReasonPopup(true);
+  //   }
+  // };
+
+
+const handleStatusUpdate = async (
+  id: string, 
+  accept: boolean, 
+  userDepartement: string, 
+  mobileView: string,
+  requestDateStr: string,
+  corridorType: string
+) => {
+  if (accept) {
+    // Apply the same restrictions for accept actions
+    const now = new Date();
+    const requestDate = new Date(requestDateStr);
+
+    const today = now.getDay(); // 5 = Friday
+    const hour = now.getHours();
+    const minute = now.getMinutes();
+
+    const isUrgent = corridorType === "Urgent Block";
+    const isFridayAfterNoon = today === 5 && (hour > 12 || (hour === 12 && minute >= 0));
+
+    if (!isUrgent && isFridayAfterNoon) {
+      // Define block start = tomorrow (Saturday)
+      const blockStart = new Date(now);
+      blockStart.setDate(now.getDate() + 1); // Saturday
+      blockStart.setHours(0, 0, 0, 0);
+
+      // Define block end = Sunday next week
+      const blockEnd = new Date(blockStart);
+      blockEnd.setDate(blockStart.getDate() + 8); // Sunday next week
+      blockEnd.setHours(23, 59, 59, 999);
+
+      // Block requests within [Saturday ... next Sunday]
+      if (requestDate >= blockStart && requestDate <= blockEnd) {
+        alert("You cannot accept requests from tomorrow to next Sunday on Friday after 12 PM.");
+        return;
+      }
+    }
+
+    // If all checks pass, proceed with acceptance
+    updateOtherRequest(
+      {
+        id,
+        accept,
+        userDepartement,
+        mobileView
+      },
+      {
+        onSuccess: () => {
+          refetch();
         },
-        {
-          onSuccess: () => {
-            // Refetch the data after the mutation succeeds
-            refetch();
-          },
-        }
-      );
-    } else {
+      }
+    );
+  } else {
+    // For reject actions, just set up the rejection dialog
     setRequestToReject({ id, userDepartement, mobileView });
     setShowRejectReasonPopup(true);
-    }
-  };
-
-
+  }
+};
 
   const handleConfirmReject = () => {
   if (!requestToReject || !rejectReason.trim()) return;
@@ -815,7 +873,7 @@ const handleDownload = () => {
       {/* Top Yellow Bar */}
       <div className="w-full bg-[#FFF86B] py-2 flex flex-col items-center">
         <span className="text-[24px] font-bold text-[#B57CF6] tracking-widest">
-          RBMS-MAS-DIVN
+            RBMS-{session?.user?.location}-DIVN
         </span>
       </div>
 
@@ -903,7 +961,7 @@ const handleDownload = () => {
                       {request.missionBlock}
                     </td>
                     <td className="border border-black px-2 py-1 whitespace-nowrap text-center text-black">
-                      {request.processedLineSections[0].lineName || "N/A"}
+                      {request.processedLineSections[0].lineName ||request.processedLineSections[0].road|| "N/A"}
                     </td>
                     <td className="border border-black px-2 py-1 text-black">
                       {request.activity}
@@ -1144,7 +1202,7 @@ const handleDownload = () => {
                           <div className="flex gap-2 justify-center">
                             <button
                               onClick={() =>
-                                handleStatusUpdate(request.id, true,userDepartement,"mobileView")
+                                handleStatusUpdate(request.id, true,userDepartement,"mobileView",request.date,request.corridorType)
                               }
                               disabled={isMutating}
                               className="px-3 py-1 bg-green-50 hover:bg-green-100 text-green-700 text-xs rounded-md border border-green-200 flex items-center transition-colors"
@@ -1164,7 +1222,7 @@ const handleDownload = () => {
                             </button>
                             <button
                               onClick={() =>
-                                handleStatusUpdate(request.id, false,userDepartement,"mobileView")
+                                handleStatusUpdate(request.id, false,userDepartement,"mobileView",request.date,request.corridorType)
                               }
                               disabled={isMutating}
                               className="px-3 py-1 bg-red-50 hover:bg-red-100 text-red-700 text-xs rounded-md border border-red-200 flex items-center transition-colors"
@@ -1319,14 +1377,12 @@ const handleDownload = () => {
             >
                Home
             </Link> */}
-            <button
-              onClick={() => window.history.back()}
-              className="text-center w-full max-w-60 rounded-[50%] bg-cyan-200 text-black font-bold text-[24px] py-4 tracking-wider border border-[#b7b7d1] hover:bg-[#baffc9] transition"
-
-              
-            >
-               Back
-            </button>
+          <button
+  onClick={() => window.location.href = '/dashboard'}
+  className="text-center w-full max-w-60 rounded-[50%] bg-cyan-200 text-black font-bold text-[24px] py-4 tracking-wider border border-[#b7b7d1] hover:bg-[#baffc9] transition"
+>
+  Back
+</button>
             {/* <Link href="/logout" className="bg-[#FFB74D] border border-black px-6 py-1.5 max-w-6 rounded-[50%] text-lg font-bold text-black">
               Logout
             </Link> */}

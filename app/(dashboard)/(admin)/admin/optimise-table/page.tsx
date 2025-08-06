@@ -358,9 +358,24 @@ export default function OptimiseTablePage() {
   );
   // console.log(minDate, maxDate);
   // const [selectedDate, setSelectedDate] = useState<Date>(minDate);
-  const [selectedDate, setSelectedDate] = useState<Date>(
-    startOfWeek(currentWeekStart, { weekStartsOn: 1 })
-  );
+  // const [selectedDate, setSelectedDate] = useState<Date>(
+  //   startOfWeek(currentWeekStart, { weekStartsOn: 1 })
+  // );
+
+
+
+  const [selectedDate, setSelectedDate] = useState<Date>(() => {
+  // Try to get saved date from localStorage
+  const savedDate = localStorage.getItem("urgentSelectedDate");
+  if (savedDate) {
+    const parsedDate = new Date(savedDate);
+    if (!isNaN(parsedDate.getTime())) {
+      return parsedDate;
+    }
+  }
+  // Fallback to the start of week if no saved date
+  return startOfWeek(currentWeekStart, { weekStartsOn: 1 });
+});
   // Set selectedDate only when minDate is ready
   useEffect(() => {
     if (minDate && !selectedDate) {
@@ -630,6 +645,7 @@ const nonCorridorRequestsFiltered = pendingRequests
       );
       if (response.success) {
         alert("Optimization status updated successfully!");
+        refetch();
       } else {
         alert("Failed to update optimization status");
       }
@@ -668,6 +684,7 @@ const nonCorridorRequestsFiltered = pendingRequests
       );
       if (response.success) {
         alert("Optimization status updated successfully!");
+        refetch();
       } else {
         alert("Failed to update optimization status");
       }
@@ -757,7 +774,7 @@ const nonCorridorRequestsFiltered = pendingRequests
 
         // Save Functionality
         const requestIds =
-          data?.data?.requests?.map((request: UserRequest) => request.id) || [];
+          preprocessedRequests.map((request: any) => request.id) || [];
         if (requestIds.length === 0) {
           alert("No requests to optimize");
           return;
@@ -773,6 +790,8 @@ const nonCorridorRequestsFiltered = pendingRequests
         });
         setOptimizedData(processedOptimizedData);
         setIsOptimizeDialogOpen(false);
+        await refetch();
+
       } else {
         alert("Failed to optimize requests");
       }
@@ -903,13 +922,14 @@ const nonCorridorRequestsFiltered = pendingRequests
   }
 
   if (error) {
-    return (
-      <div className="min-h-screen bg-white p-3 border border-black flex items-center justify-center">
-        <div className="text-center py-5 text-red-600">
-          Error loading approved requests. Please try again.
-        </div>
-      </div>
-    );
+    router.push('/auth/login');
+    // return (
+    //   <div className="min-h-screen bg-white p-3 border border-black flex items-center justify-center">
+    //     <div className="text-center py-5 text-red-600">
+    //       Error loading approved requests. Please try again.
+    //     </div>
+    //   </div>
+    // );
   }
 
 
@@ -936,53 +956,68 @@ const nonCorridorRequestsFiltered = pendingRequests
             weekStartsOn={1}
           />
         </div>
-{isOptimizeDialogOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 text-black">
-            <div className="bg-white p-6 w-full max-w-md border border-black">
-              <div className="border-b-2 border-[#13529e] pb-3 mb-4 flex justify-between items-center">
-                <div className="flex items-center gap-4">
-                  <h2 className="text-lg font-bold text-[#13529e]">
-                    Optimize Requests
-                  </h2>
-                  <span
-                    className={`px-3 py-1 text-sm rounded-full ${
-                      isUrgentMode
-                        ? "bg-red-100 text-red-800"
-                        : "bg-blue-100 text-blue-800"
-                    } border border-black`}
-                  >
-                    {isUrgentMode ? "Urgent Mode" : "Normal Mode"}
-                  </span>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setIsOptimizeDialogOpen(false)}
-                    className="px-4 py-1 text-sm bg-white text-[#13529e] border border-black"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => handleOptimize()}
-                    disabled={optimizeMutation.isPending}
-                    className="px-4 py-1 text-sm bg-[#13529e] text-white border border-black disabled:opacity-50"
-                  >
-                    {optimizeMutation.isPending ? "Optimizing..." : "Optimize"}
-                  </button>
-                </div>
-              </div>
-              <div className="mb-4 space-y-2">
-                <p>Are you sure you want to optimize the requests for:</p>
-                <p className="font-medium">
-                  Week: {format(weekStart, "dd MMM")} -{" "}
-                  {format(weekEnd, "dd MMM yyyy")}
-                </p>
-                <p className="font-medium">
-                  Total Requests: {data?.data?.requests?.length || 0}
-                </p>
-              </div>
-            </div>
+{isOptimizeDialogOpen && (() => {
+  // Calculate the requests to be optimized for dialog preview
+  const preData = isUrgentRequests ? urgentRequestDate : [...corridorRequestsFiltered, ...nonCorridorRequestsFiltered];
+  const requestsToOptimize = preData.filter(
+    (request: UserRequest) => {
+      const requestDate = format(parseISO(request.date), "yyyy-MM-dd");
+      const selected = format(selectedDate, "yyyy-MM-dd");
+      return isUrgentRequests
+        ? request.corridorType === "Urgent Block" && requestDate === selected
+        : request.corridorType !== "Urgent Block";
+    }
+  );
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 text-black">
+      <div className="bg-white p-6 w-full max-w-md border border-black">
+        <div className="border-b-2 border-[#13529e] pb-3 mb-4 flex justify-between items-center">
+          <div className="flex items-center gap-4">
+            <h2 className="text-lg font-bold text-[#13529e]">
+              Optimize Requests
+            </h2>
+            <span
+              className={`px-3 py-1 text-sm rounded-full ${
+                isUrgentMode
+                  ? "bg-red-100 text-red-800"
+                  : "bg-blue-100 text-blue-800"
+              } border border-black`}
+            >
+              {isUrgentMode ? "Urgent Mode" : "Normal Mode"}
+            </span>
           </div>
-        )}
+          <div className="flex gap-2">
+            <button
+              onClick={() => setIsOptimizeDialogOpen(false)}
+              className="px-4 py-1 text-sm bg-white text-[#13529e] border border-black"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => handleOptimize()}
+              disabled={optimizeMutation.isPending}
+              className="px-4 py-1 text-sm bg-[#13529e] text-white border border-black disabled:opacity-50"
+            >
+              {optimizeMutation.isPending ? "Optimizing..." : "Optimize"}
+            </button>
+          </div>
+        </div>
+        <div className="mb-4 space-y-2">
+          <p>Are you sure you want to optimize the requests for:</p>
+          <p className="font-medium">
+            Week: {format(weekStart, "dd MMM")} -{" "}
+            {format(weekEnd, "dd MMM yyyy")}
+          </p>
+          <p className="font-medium">
+    {isUrgentRequests
+      ? `Total Block Request for Urgent: ${requestsToOptimize.length}`
+      : `Total Block Request for Corridor and Outside Corridor: ${requestsToOptimize.length}`}
+  </p>
+        </div>
+      </div>
+    </div>
+  );
+})()}
         {/* Urgent Blocks Section - now at the top */}
         <div className="mt-4 mb-8">
           <h2 className="border-b-2 pb-2 border-[#13529e] text-[24px] font-semibold text-[#13529e]">Urgent Blocks</h2>
@@ -1007,11 +1042,21 @@ const nonCorridorRequestsFiltered = pendingRequests
             </button>
           </div>
           <DaySwitcher
+  currentDate={selectedDate}
+  onDateChange={(newDate) => {
+    setSelectedDate(newDate);
+    // No need to manually save here - the DaySwitcher handles it
+  }}
+  minDate={startOfWeek(currentWeekStart, { weekStartsOn: 1 })}
+  maxDate={addDays(weekStart, 7)}
+  storageKey="urgentSelectedDate" // Unique key for urgent block
+/>
+          {/* <DaySwitcher
             currentDate={selectedDate}
             onDateChange={(newDate) => setSelectedDate(newDate)}
             minDate={startOfWeek(currentWeekStart, { weekStartsOn: 1 })}
             maxDate={addDays(weekStart, 7)}
-          />
+          /> */}
           <div className="overflow-x-auto max-h-[70vh] overflow-y-auto rounded-lg border border-gray-300 shadow-sm mt-4">
             <table className="w-full border-collapse text-black bg-white">
               <thead className={`sticky top-0 ${showRejectionModal ? "z-0" : "z-10"} bg-gray-100 shadow`}>
@@ -1026,24 +1071,67 @@ const nonCorridorRequestsFiltered = pendingRequests
                   <th className="border border-black p-2 text-left text-[24px] font-semibold text-black sticky top-0 bg-gray-100 z-10"><ColumnHeader icon="time" title="Optimize" /></th>
                   <th className="border border-black p-2 text-left text-[24px] font-semibold text-black sticky top-0 bg-gray-100 z-10"><ColumnHeader icon="work" title="Activity" /></th>
                   <th className="border border-black p-2 text-left text-[24px] font-semibold text-black sticky top-0 bg-gray-100 z-10"><ColumnHeader icon="action" title="Actions" /></th>
+                  <th className="border border-black p-2 text-left text-[24px] font-semibold text-black sticky top-0 bg-gray-100 z-10"><ColumnHeader icon="view" title="View" /></th>
+
                 </tr>
               </thead>
               <tbody>
                 {urgentRequestDate.length === 0 && (
                   <tr>
-                    <td colSpan={11} className="border border-black p-2 text-[24px] text-left">No requests found.</td>
+                    <td colSpan={12} className="border border-black p-2 text-[24px] text-left">No requests found.</td>
                   </tr>
                 )}
-                {urgentRequestDate.map((request: UserRequest) => (
+                {urgentRequestDate.filter((request:UserRequest)=>!request.isSanctioned).sort((a:any, b:any) => new Date(a.demandTimeFrom).getTime() - new Date(b.demandTimeFrom).getTime()).map((request: UserRequest) => (
                   <tr key={`request-${request.id}-${request.date}`} className={`hover:bg-blue-50 transition-colors ${request.optimizeTimeFrom && request.optimizeTimeTo ? "bg-green-50" : ""}`}>
-                    <td className="border border-black p-2 text-[24px]">{dayjs(request.date).format("DD-MM-YY")}</td>
+                     <td className="border border-black p-2 text-[24px]">
+                      {editingId === request.id ? (
+                        <input
+                          type="date"
+                          value={editDate}
+                          onChange={(e) => setEditDate(e.target.value)}
+                          className="w-28 border p-1 text-sm rounded"
+                        />
+                      ) : (
+                        dayjs(request.date).format("DD-MM-YY")
+                      )}
+                    </td>
                     <td className="border border-black p-2 text-[24px]">{request.selectedDepartment}</td>
                     <td className="border border-black p-2 text-[24px]">{request.selectedSection}</td>
                     <td className="border border-black p-2 text-[24px]">{request.selectedDepo}</td>
                     <td className="border border-black p-2 text-[24px]">{request.missionBlock}</td>
                     <td className="border border-black p-2 text-[24px]">{getLineOrRoad(request)}</td>
                     <td className="border border-black p-2 text-[24px]">{formatTime(request.demandTimeFrom)} - {formatTime(request.demandTimeTo)}</td>
-                    <td className="border border-black p-2 text-[24px]">{request.optimizeTimeFrom && request.optimizeTimeFrom !== "WrongRequest" ? formatTime(request.optimizeTimeFrom) : "N/A"} - {request.optimizeTimeTo && request.optimizeTimeTo !== "WrongRequest" ? formatTime(request.optimizeTimeTo) : "N/A"}</td>
+                    <td className="border border-black p-2 text-[24px]">
+                      {editingId === request.id ? (
+                        <div className="flex gap-1 items-center">
+                          <input
+                            type="time"
+                            value={timeFrom}
+                            onChange={(e) => setTimeFrom(e.target.value)}
+                            className="w-20 border p-1 text-sm rounded"
+                          />
+                          <span>-</span>
+                          <input
+                            type="time"
+                            value={timeTo}
+                            onChange={(e) => setTimeTo(e.target.value)}
+                            className="w-20 border p-1 text-sm rounded"
+                          />
+                        </div>
+                      ) : (
+                        <>
+                          {request.optimizeTimeFrom &&
+                            request.optimizeTimeFrom !== "WrongRequest"
+                            ? formatTime(request.optimizeTimeFrom)
+                            : "N/A"}{" "}
+                          -{" "}
+                          {request.optimizeTimeTo &&
+                            request.optimizeTimeTo !== "WrongRequest"
+                            ? formatTime(request.optimizeTimeTo)
+                            : "N/A"}
+                        </>
+                      )}
+                    </td>
                     <td className="border border-black p-2 text-[24px]">{request.activity}</td>
                     <td className="border border-black p-2 text-[24px]">
                       <div className="flex gap-2">
@@ -1100,7 +1188,7 @@ const nonCorridorRequestsFiltered = pendingRequests
                             </button>
                               <button
                                 className="px-2 py-1 text-[24px] bg-gray-300 text-black border border-black rounded"
-                                onClick={() => handleEditClick(request)}
+                                onClick={() => setModifyReturnOpenId(request.id)}
                               >
                                 Modify/Return
                               </button>
@@ -1108,6 +1196,17 @@ const nonCorridorRequestsFiltered = pendingRequests
                         )}
                       </div>
                     </td>
+                    <td className="border border-black p-2 text-[24px]">
+  <div className="flex gap-2">
+    <Link
+      href={`/admin/view-request/${request.id}?from=request-table`}
+      className="px-2 py-1 bg-blue-600 text-white border border-black rounded inline-block text-center"
+    >
+      View
+    </Link>
+  </div>
+</td>
+
                   </tr>
                 ))}
               </tbody>
@@ -1173,20 +1272,23 @@ const nonCorridorRequestsFiltered = pendingRequests
                   <th className="border border-black p-2 text-left text-[24px] font-semibold text-black sticky top-0 bg-gray-100 z-10">
                     <ColumnHeader icon="action" title="Actions" />
                   </th>
+                   <th className="border border-black p-2 text-left text-[24px] font-semibold text-black sticky top-0 bg-gray-100 z-10">
+                    <ColumnHeader icon="view" title="View" />
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {corridorRequestsFiltered.length === 0 && (
                   <tr>
                     <td
-                      colSpan={11}
+                      colSpan={12}
                       className="border border-black p-2 text-[24px] text-left"
                     >
                       No requests found.
                     </td>
                   </tr>
                 )}
-                {corridorRequestsFiltered.map((request: UserRequest) => (
+                {corridorRequestsFiltered.sort((a:any, b:any) => new Date(a.demandTimeFrom).getTime() - new Date(b.demandTimeFrom).getTime()).map((request: UserRequest) => (
                   <tr
                     key={`request-${request.id}-${request.date}`}
                     className={`hover:bg-blue-50 transition-colors ${request.optimizeTimeFrom && request.optimizeTimeTo
@@ -1239,7 +1341,7 @@ const nonCorridorRequestsFiltered = pendingRequests
                             type="time"
                             value={timeTo}
                             onChange={(e) => setTimeTo(e.target.value)}
-                            className="w-20 border p-1 text-[24px] rounded"
+                            className="w-20 border p-1 text-sm rounded"
                           />
                         </div>
                       ) : (
@@ -1316,7 +1418,7 @@ const nonCorridorRequestsFiltered = pendingRequests
                             </button>
                               <button
                                 className="px-2 py-1 text-[24px] bg-gray-300 text-black border border-black rounded"
-                                onClick={() => handleEditClick(request)}
+                                onClick={() => setModifyReturnOpenId(request.id)}
                               >
                                 Modify/Return
                               </button>
@@ -1324,6 +1426,16 @@ const nonCorridorRequestsFiltered = pendingRequests
                         )}
                       </div>
                     </td>
+                                      <td className="border border-black p-2 text-[24px]">
+  <div className="flex gap-2">
+    <Link
+      href={`/admin/view-request/${request.id}?from=request-table`}
+      className="px-2 py-1 bg-blue-600 text-white border border-black rounded inline-block text-center"
+    >
+      View
+    </Link>
+  </div>
+</td>
                   </tr>
                 ))}
               </tbody>
@@ -1370,20 +1482,23 @@ const nonCorridorRequestsFiltered = pendingRequests
                   <th className="border border-black p-2 text-left text-[24px] font-semibold text-black sticky top-0 bg-gray-100 z-10">
                     <ColumnHeader icon="action" title="Actions" />
                   </th>
+                   <th className="border border-black p-2 text-left text-[24px] font-semibold text-black sticky top-0 bg-gray-100 z-10">
+                    <ColumnHeader icon="view" title="View" />
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {nonCorridorRequestsFiltered.length === 0 && (
                   <tr>
                     <td
-                      colSpan={11}
+                      colSpan={12}
                       className="border border-black p-2 text-[24px] text-left"
                     >
                       No requests found.
                     </td>
                   </tr>
                 )}
-                {nonCorridorRequestsFiltered.map((request: UserRequest) => (
+                {nonCorridorRequestsFiltered.sort((a:any, b:any) => new Date(a.demandTimeFrom).getTime() - new Date(b.demandTimeFrom).getTime()).map((request: UserRequest) => (
                   <tr
                     key={`request-${request.id}-${request.date}`}
                     className={`hover:bg-blue-50 transition-colors ${request.optimizeTimeFrom && request.optimizeTimeTo
@@ -1429,14 +1544,14 @@ const nonCorridorRequestsFiltered = pendingRequests
                             type="time"
                             value={timeFrom}
                             onChange={(e) => setTimeFrom(e.target.value)}
-                            className="w-20 border p-1 text-[24px] rounded"
+                            className="w-20 border p-1 text-sm rounded"
                           />
                           <span>-</span>
                           <input
                             type="time"
                             value={timeTo}
                             onChange={(e) => setTimeTo(e.target.value)}
-                            className="w-20 border p-1 text-[24px] rounded"
+                            className="w-20 border p-1 text-sm rounded"
                           />
                         </div>
                       ) : (
@@ -1513,7 +1628,7 @@ const nonCorridorRequestsFiltered = pendingRequests
                             </button>
                               <button
                                 className="px-2 py-1 text-[24px] bg-gray-300 text-black border border-black rounded"
-                                onClick={() => handleEditClick(request)}
+                                onClick={() => setModifyReturnOpenId(request.id)}
                               >
                                 Modify/Return
                               </button>
@@ -1521,6 +1636,17 @@ const nonCorridorRequestsFiltered = pendingRequests
                         )}
                       </div>
                     </td>
+                    <td className="border border-black p-2 text-[24px]">
+  <div className="flex gap-2">
+    <Link
+      href={`/admin/view-request/${request.id}?from=request-table`}
+      className="px-2 py-1 bg-blue-600 text-white border border-black rounded inline-block text-center"
+    >
+      View
+    </Link>
+  </div>
+</td>
+
                   </tr>
                 ))}
               </tbody>
@@ -1572,13 +1698,13 @@ const nonCorridorRequestsFiltered = pendingRequests
       <div>
         <div className="flex justify-center gap-3 mb-2 mt-8">
           
-          <button
-            onClick={() => window.history.back()}
-            className="flex items-center gap-1 bg-[#E6E6FA] border border-black px-8 py-1.5 rounded-[50%] text-[24px] font-bold"
-            style={{ color: "black" }}
-          >
-            Back
-          </button>
+         <a
+  href="/admin/request-table"
+  className="flex items-center gap-1 bg-[#E6E6FA] border border-black px-8 py-1.5 rounded-[50%] text-[24px] font-bold"
+  style={{ color: "black" }}
+>
+  Back
+</a>
         </div>
 
         <div className="text-[10px] text-gray-600 mt-2 border-t border-black pt-1 text-right">

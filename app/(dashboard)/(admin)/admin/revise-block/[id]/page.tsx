@@ -7,6 +7,7 @@ import { adminService } from "@/app/service/api/admin";
 import { format, parseISO } from "date-fns";
 import Link from "next/link";
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 
 export default function ReviseBlockDetailsPage() {
     const params = useParams();
@@ -20,6 +21,7 @@ export default function ReviseBlockDetailsPage() {
         optimizeTimeTo: "",
         date: "",
     });
+  const { data: session } = useSession();
 
     // Fetch request data
     const { data, isLoading, error } = useQuery({
@@ -82,13 +84,14 @@ export default function ReviseBlockDetailsPage() {
   }
 
   if (error) {
-    return (
-      <div className="min-h-screen bg-white p-3 border border-black flex items-center justify-center">
-        <div className="text-center py-5 text-red-600">
-          Error loading approved requests. Please try again.
-        </div>
-      </div>
-    );
+    router.push('/auth/login');
+    // return (
+    //   <div className="min-h-screen bg-white p-3 border border-black flex items-center justify-center">
+    //     <div className="text-center py-5 text-red-600">
+    //       Error loading approved requests. Please try again.
+    //     </div>
+    //   </div>
+    // );
   }
 
     const request = data?.data;
@@ -106,7 +109,7 @@ export default function ReviseBlockDetailsPage() {
             {/* Top Yellow Bar */}
             <div className="w-full bg-[#FFF86B] py-2 flex flex-col items-center">
                 <span className="text-4xl font-bold text-[#B57CF6] tracking-widest">
-                    RBMS
+                    RBMS-{session?.user?.location}-DIVN
                 </span>
             </div>
             {/* Main Title on Light Blue */}
