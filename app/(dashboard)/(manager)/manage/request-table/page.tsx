@@ -1008,29 +1008,30 @@ export default function ManagerRequestTablePage() {
       alert("Failed to generate Excel file. Please check console for details.");
     }
   };
-  if (isLoading) {
-    return (
-      <div className="min-h-screen text-black bg-white p-3 border border-black flex items-center justify-center">
-        <div className="text-center py-5">Loading approved requests...</div>
-      </div>
-    );
-  }
+  // if (isLoading) {
+  //   return (
+  //     <div className="min-h-screen text-black bg-white p-3 border border-black flex items-center justify-center">
+  //       <div className="text-center py-5">Loading approved requests...</div>
+  //     </div>
+  //   );
+  // }
 
   if (error) {
-    return (
-      <div className="min-h-screen bg-white p-3 border border-black flex items-center justify-center">
-        <div className="text-center py-5 text-red-600">
-          Error loading approved requests. Please try again.
-        </div>
-      </div>
-    );
+    router.push('/auth/login');
+    // return (
+    //   <div className="min-h-screen bg-white p-3 border border-black flex items-center justify-center">
+    //     <div className="text-center py-5 text-red-600">
+    //       Error loading approved requests. Please try again.
+    //     </div>
+    //   </div>
+    // );
   }
   return (
     <div className="min-h-screen bg-[#FFFDF5]">
       {/* Top Yellow Bar */}
       <div className="w-full bg-[#FFF86B] py-2 flex flex-col items-center">
         <span className="text-[9vw] min-[430px]:text-4xl font-bold text-[#B57CF6] tracking-widest">
-          RBMS-MAS-DIVN
+            RBMS-{session?.user?.location}-DIVN
         </span>
       </div>
 
@@ -1233,6 +1234,7 @@ export default function ManagerRequestTablePage() {
                 <th className="border-2 border-[#B57CF6] p-2">Block Section</th>
                 <th className="border-2 border-[#B57CF6] p-2">Line/Road</th>
                 <th className="border-2 border-[#B57CF6] p-2">Demanded</th>
+                <th className="border-2 border-[#B57CF6] p-2">Sanctioned</th>
                 <th className="border-2 border-[#B57CF6] p-2">Activity</th>
                 <th className="border-2 border-[#B57CF6] p-2 sticky right-0 z-10 bg-[#E8D6FF]">
                   Status
@@ -1240,9 +1242,18 @@ export default function ManagerRequestTablePage() {
               </tr>
             </thead>
 <tbody>
-  {filteredRequests.filter((request: UserRequest) => request.isSanctioned === true).length > 0 ? (
+  {isLoading ? (
+    <tr>
+      <td colSpan={7} className="text-center py-4 border border-black">
+        Loading approved requests...
+      </td>
+    </tr>
+  ) : (
+    filteredRequests.filter((request: UserRequest) => request.isSanctioned === true).length > 0 ? (
     filteredRequests
       .filter((request: UserRequest) => request.isSanctioned === true)
+      .sort((a, b) => new Date(a.sanctionedTimeFrom || a.optimizeTimeFrom || a.demandTimeFrom).getTime() - new Date(b.sanctionedTimeFrom || b.optimizeTimeFrom || b.demandTimeTo).getTime())
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
       .map((request: UserRequest, index: number) => {
         const status = getDisplayStatus(request);
         const rowBgColor = index % 2 === 0 ? "bg-[#F5EEFF]" : "bg-white";
@@ -1275,6 +1286,13 @@ export default function ManagerRequestTablePage() {
               {formatTime(request.demandTimeFrom)} -{" "}
               {formatTime(request.demandTimeTo)}
             </td>
+  <td className="border border-[#B57CF6] p-2 text-center">
+  {request.sanctionedTimeFrom && request.sanctionedTimeTo
+    ? `${formatTime(request.sanctionedTimeFrom)} - ${formatTime(request.sanctionedTimeTo)}`
+    : `${formatTime(request.optimizeTimeFrom!)} - ${formatTime(request.optimizeTimeTo!)}`}
+</td>
+
+
             <td className="border border-[#B57CF6] p-2">
               {request.activity}
             </td>
@@ -1295,6 +1313,7 @@ export default function ManagerRequestTablePage() {
         </div>
       </td>
     </tr>
+  )
   )}
 </tbody>
           </table>

@@ -17,6 +17,9 @@ export interface RequestResponse {
 }
 
 export interface RequestItem {
+    emergencyBlockRemarks : string;
+    powerBlockDisconnectionAssignTo: string;
+    sntDisconnectionAssignTo: any;
     divisionId:any,
     isSanctioned: boolean;
     remarkByManager: string;
@@ -49,7 +52,7 @@ export interface RequestItem {
     elementarySectionTo: string | null;
     sigElementarySectionFrom: string | null;
     sigElementarySectionTo: string | null;
-    repercussions: string | null;
+    repercussions : string | null;
     requestremarks: string;
     createdAt: string;
     status: "PENDING" | "APPROVED" | "REJECTED";
@@ -148,7 +151,7 @@ export function useGetWeeklyUserRequests(weekRange: DateRangeFilter) {
 export function useGetOtherRequests(
   selectedDepo: string, 
   page = 1, 
-  limit = 10,
+  limit = 100,
   startDate?: string,
   endDate?: string,
   userDepartement?:string
